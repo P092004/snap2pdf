@@ -1,0 +1,220 @@
+# snap2pdf
+This is may new startup project snap2pdf converter so that ...
+snap2pdf
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snap2PDF.com - Fast JPG to PDF Converter</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+html { scroll-behavior: smooth; }
+</style>
+
+</head>
+
+<body class="bg-gray-50 text-gray-800 transition-all duration-300">
+
+<!-- NAVBAR -->
+<nav class="flex justify-between items-center p-6 shadow bg-white sticky top-0 z-50">
+  <h1 class="text-2xl font-bold text-indigo-600 cursor-pointer">Snap2PDF.com</h1>
+  <div class="space-x-6 hidden md:block">
+    <a href="#home" class="hover:text-indigo-600 transition">Home</a>
+    <a href="#about" class="hover:text-indigo-600 transition">About</a>
+    <a href="#contact" class="hover:text-indigo-600 transition">Contact</a>
+    <button id="darkToggle" class="px-3 py-1 border rounded hover:bg-gray-200 transition">🌙</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="home" class="text-center py-16 bg-gradient-to-r from-indigo-600 to-cyan-500 text-white">
+  <h2 class="text-4xl font-bold mb-4">Convert JPG to PDF in Seconds</h2>
+  <p class="mb-8">India's Fast, Secure & Free PDF Converter</p>
+
+  <div class="bg-white text-gray-800 p-8 rounded-xl shadow-xl max-w-xl mx-auto">
+
+    <input type="file" id="fileInput" multiple accept="image/*"
+      class="border p-3 w-full rounded-lg mb-4 hover:border-indigo-500 transition">
+
+    <div id="preview" class="flex flex-wrap gap-2 justify-center mb-4"></div>
+
+    <button id="convertBtn"
+      class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition transform hover:scale-105">
+      Convert to PDF
+    </button>
+
+    <button id="downloadBtn"
+      class="bg-green-600 text-white px-6 py-2 rounded-lg hidden hover:bg-green-700 transition transform hover:scale-105 mt-3">
+      Download PDF
+    </button>
+
+    <button id="upgradeBtn"
+      class="bg-yellow-500 text-white px-6 py-2 rounded-lg mt-3 hover:bg-yellow-600 transition transform hover:scale-105">
+      Upgrade to Pro (Remove Watermark)
+    </button>
+
+    <p id="proStatus" class="text-sm text-green-600 mt-2 hidden">
+      ✅ Pro Activated – Watermark Removed
+    </p>
+
+    <p id="limitText" class="text-sm text-red-500 mt-4"></p>
+
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="py-16 text-center px-6">
+  <h2 class="text-3xl font-bold mb-6">About Snap2PDF</h2>
+  <p class="max-w-3xl mx-auto text-gray-600 leading-relaxed">
+    Snap2PDF.com is built to provide fast, secure, and privacy-focused document tools.
+    Everything works inside your browser — we never upload or store your files.
+    Our mission is to build India's next powerful PDF platform competing globally.
+  </p>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="bg-gray-100 py-16 text-center">
+  <h2 class="text-3xl font-bold mb-6">Contact & Support</h2>
+  <p>Email us anytime at:</p>
+  <a href="mailto:pandithardik@gmail.com"
+     class="text-indigo-600 font-semibold hover:underline">
+     pandithardik@gmail.com
+  </a>
+</section>
+
+<!-- AI CHAT -->
+<div class="fixed bottom-6 right-6">
+  <button onclick="toggleChat()"
+    class="bg-indigo-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition">
+    🤖 AI Help
+  </button>
+
+  <div id="chatBox" class="hidden bg-white w-80 h-96 shadow-xl rounded-xl mt-2 p-4 flex flex-col">
+    <div id="chatMessages" class="flex-1 overflow-y-auto text-sm mb-2"></div>
+    <input id="chatInput" type="text" placeholder="Ask something..."
+      class="border p-2 rounded w-full"
+      onkeydown="if(event.key==='Enter')sendMessage()">
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="bg-gray-900 text-white py-10 text-center">
+  <h3 class="text-xl font-bold mb-2">Snap2PDF.com</h3>
+  <p class="text-gray-400 mb-4">Fast • Secure • Free</p>
+  <p class="text-gray-500 text-sm">
+    © 2026 Snap2PDF.com | Made in India 🇮🇳
+  </p>
+</footer>
+
+<script>
+const { jsPDF } = window.jspdf;
+let images = [];
+let pdf;
+let usage = localStorage.getItem("usage") || 0;
+let isPro = localStorage.getItem("isPro") === "true";
+
+// Dark Mode
+darkToggle.onclick = () => {
+  document.body.classList.toggle("bg-gray-900");
+  document.body.classList.toggle("text-white");
+};
+
+// Upgrade
+upgradeBtn.onclick = () => {
+  isPro = true;
+  localStorage.setItem("isPro", "true");
+  proStatus.classList.remove("hidden");
+  alert("🎉 Pro Activated! Watermark Removed.");
+};
+
+// Upload Images
+fileInput.addEventListener("change", function(e) {
+  images = [];
+  preview.innerHTML = "";
+
+  Array.from(e.target.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      images.push(event.target.result);
+      const img = document.createElement("img");
+      img.src = event.target.result;
+      img.className = "w-24 rounded shadow";
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+});
+
+// Convert to PDF
+convertBtn.addEventListener("click", () => {
+
+  if (!isPro && usage >= 5) {
+    limitText.innerText = "Daily free limit reached. Upgrade to Pro.";
+    return;
+  }
+
+  if (images.length === 0) {
+    alert("Upload images first!");
+    return;
+  }
+
+  pdf = new jsPDF();
+
+  images.forEach((img, index) => {
+    if (index !== 0) pdf.addPage();
+    pdf.addImage(img, "JPEG", 10, 10, 180, 160);
+
+    if (!isPro) {
+      pdf.setTextColor(200);
+      pdf.text("Snap2PDF.com (Free Version)", 105, 280, { align: "center" });
+    }
+  });
+
+  if (!isPro) {
+    usage++;
+    localStorage.setItem("usage", usage);
+  }
+
+  downloadBtn.classList.remove("hidden");
+});
+
+// Download
+downloadBtn.addEventListener("click", () => {
+  pdf.save("Snap2PDF.pdf");
+});
+
+// Chatbot
+function toggleChat() {
+  chatBox.classList.toggle("hidden");
+}
+
+function sendMessage() {
+  let input = chatInput.value.trim();
+  if (!input) return;
+
+  chatMessages.innerHTML += "<div><b>You:</b> " + input + "</div>";
+
+  let reply = "Upload JPG images and click Convert.";
+
+  if (input.toLowerCase().includes("limit"))
+    reply = "Free users can convert 5 times per day.";
+
+  if (input.toLowerCase().includes("pro"))
+    reply = "Upgrade removes watermark and daily limits.";
+
+  if (input.toLowerCase().includes("contact"))
+    reply = "Email: pandithardik@gmail.com";
+
+  chatMessages.innerHTML += "<div class='text-indigo-600'><b>AI:</b> " + reply + "</div>";
+
+  chatInput.value = "";
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+</script>
+
+</body>
+</html>
