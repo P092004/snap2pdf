@@ -27,6 +27,36 @@ html { scroll-behavior: smooth; }
     <button id="darkToggle" class="px-3 py-1 border rounded hover:bg-gray-100 transition">🌙</button>
   </div>
 </nav>
+<!-- AUTH SECTION -->
+<section class="py-10 bg-white text-center">
+  <h2 class="text-2xl font-bold mb-4">Login / Signup</h2>
+
+  <div class="max-w-md mx-auto space-y-3">
+
+    <input id="name" placeholder="Name"
+      class="border p-2 w-full rounded">
+
+    <input id="email" placeholder="Email"
+      class="border p-2 w-full rounded">
+
+    <input id="password" type="password" placeholder="Password"
+      class="border p-2 w-full rounded">
+
+    <button onclick="signup()"
+      class="bg-indigo-600 text-white px-4 py-2 rounded w-full">
+      Sign Up
+    </button>
+
+    <button onclick="login()"
+      class="bg-green-600 text-white px-4 py-2 rounded w-full">
+      Login
+    </button>
+
+    <p id="authMessage" class="text-sm text-red-500"></p>
+
+  </div>
+</section>
+
 
 <!-- HERO -->
 <section id="home" class="py-12 md:py-20 px-4 bg-gradient-to-r from-indigo-600 to-cyan-500 text-white text-center">
@@ -268,6 +298,50 @@ clearBtn.addEventListener("click", () => {
 new Sortable(preview, {
   animation: 150
 });
+let token = localStorage.getItem("token");
+
+async function signup() {
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch(`${API_BASE}/auth/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  });
+
+  const data = await res.json();
+  document.getElementById("authMessage").innerText = data.message;
+}
+
+async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json();
+
+  if (data.token) {
+    localStorage.setItem("token", data.token);
+    token = data.token;
+
+    if (data.isPro) {
+      isPro = true;
+      proStatus.classList.remove("hidden");
+    }
+
+    document.getElementById("authMessage").innerText = "Login Successful";
+  } else {
+    document.getElementById("authMessage").innerText = data.message;
+  }
+}
+
 
 </script>
 
