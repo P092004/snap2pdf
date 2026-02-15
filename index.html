@@ -7,6 +7,8 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <style>
 html { scroll-behavior: smooth; }
@@ -43,8 +45,7 @@ html { scroll-behavior: smooth; }
       class="border-2 border-dashed border-gray-300 p-4 w-full rounded-xl mb-6 hover:border-indigo-500 transition cursor-pointer">
 
     <!-- Preview -->
-    <div id="preview"
-      class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mb-6"></div>
+    <div id="preview" class="flex flex-wrap gap-2 justify-center mb-4 cursor-move"></div>
 
     <!-- Buttons -->
     <div class="space-y-3">
@@ -78,6 +79,32 @@ html { scroll-behavior: smooth; }
     <p id="limitText" class="text-red-500 text-sm mt-3"></p>
 
   </div>
+<!-- Advanced Controls -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-left">
+
+  <!-- Page Size -->
+  <div>
+    <label class="text-sm font-semibold">Page Size</label>
+    <select id="pageSize" class="w-full border p-2 rounded">
+      <option value="a4">A4</option>
+      <option value="letter">Letter</option>
+    </select>
+  </div>
+
+  <!-- Margin -->
+  <div>
+    <label class="text-sm font-semibold">Margin (mm)</label>
+    <input type="number" id="margin" value="10" class="w-full border p-2 rounded">
+  </div>
+
+  <!-- Compression -->
+  <div class="md:col-span-2">
+    <label class="text-sm font-semibold">Image Compression</label>
+    <input type="range" id="compression" min="0.3" max="1" step="0.1" value="0.8" class="w-full">
+  </div>
+
+</div>
+
 </section>
 
 <!-- ABOUT -->
@@ -123,10 +150,23 @@ darkToggle.onclick = () => {
 
 // Upgrade
 upgradeBtn.onclick = () => {
-  isPro = true;
-  localStorage.setItem("isPro", "true");
-  proStatus.classList.remove("hidden");
-  alert("🎉 Pro Activated!");
+
+  var options = {
+    key: "YOUR_RAZORPAY_KEY",
+    amount: 19900, 
+    currency: "INR",
+    name: "Snap2PDF Pro",
+    description: "Remove watermark + Unlimited usage",
+    handler: function (response){
+        isPro = true;
+        localStorage.setItem("isPro", "true");
+        proStatus.classList.remove("hidden");
+        alert("Payment Successful! Pro Activated.");
+    }
+  };
+
+  var rzp1 = new Razorpay(options);
+  rzp1.open();
 };
 
 // Upload
@@ -151,7 +191,7 @@ fileInput.addEventListener("change", function(e) {
 convertBtn.addEventListener("click", () => {
 
   if (!isPro && usage >= 5) {
-    limitText.innerText = "Daily free limit reached.";
+    limitText.innerText = "Daily free limit reached. Upgrade to Pro.";
     return;
   }
 
@@ -160,15 +200,44 @@ convertBtn.addEventListener("click", () => {
     return;
   }
 
-  pdf = new jsPDF();
+  const pageSizeValue = document.getElementById("pageSize").value;
+  const margin = parseInt(document.getElementById("margin").value);
+  const compression = parseFloat(document.getElementById("compression").value);
 
-  images.forEach((img, index) => {
+  const pageFormats = {
+    a4: [210, 297],
+    letter: [216, 279]
+  };
+
+  pdf = new jsPDF({
+    unit: "mm",
+    format: pageFormats[pageSizeValue]
+  });
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  const previewImages = document.querySelectorAll("#preview img");
+
+  previewImages.forEach((imgElement, index) => {
     if (index !== 0) pdf.addPage();
-    pdf.addImage(img, "JPEG", 10, 10, 180, 160);
+
+    pdf.addImage(
+      imgElement.src,
+      "JPEG",
+      margin,
+      margin,
+      pageWidth - margin * 2,
+      pageHeight - margin * 2,
+      undefined,
+      "FAST"
+    );
 
     if (!isPro) {
       pdf.setTextColor(200);
-      pdf.text("Snap2PDF.com (Free)", 105, 280, { align: "center" });
+      pdf.text("Snap2PDF.com (Free)", pageWidth / 2, pageHeight - 5, {
+        align: "center"
+      });
     }
   });
 
@@ -196,6 +265,10 @@ clearBtn.addEventListener("click", () => {
   limitText.innerText = "";
   pdf = null;
 });
+new Sortable(preview, {
+  animation: 150
+});
+
 </script>
 
 </body>
