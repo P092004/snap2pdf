@@ -1,0 +1,13 @@
+{
+  "name": "snap2pdf",
+  "version": "1.0.0",
+  "description": "Snap2PDF single-file frontend with deployment-ready backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
